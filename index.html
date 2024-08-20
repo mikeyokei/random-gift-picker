@@ -3,88 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magical Gift Picker</title>
+    <title>Random Gift Picker</title>
     <style>
-        /* ... (CSS remains the same) ... */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        #giftDisplay {
+            font-size: 18px;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            min-height: 50px;
+        }
+        input, button {
+            font-size: 16px;
+            padding: 10px;
+            margin: 10px 0;
+            width: calc(100% - 22px);
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #giftStatus {
+            margin-top: 20px;
+            text-align: left;
+        }
+        #giftStatus ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #giftStatus li {
+            margin-bottom: 5px;
+            padding: 5px;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Magical Gift Picker</h1>
-        <input type="text" id="nameInput" placeholder="Enter your magical name" required>
-        <div id="giftDisplay">Enter your name and click the button to reveal your enchanted gift!</div>
-        <button id="pickButton">Unveil Your Gift</button>
+        <h1>Random Gift Picker</h1>
+        <input type="text" id="nameInput" placeholder="Enter your name" required>
+        <div id="giftDisplay">Enter your name and click the button to pick a random gift!</div>
+        <button id="pickButton">Pick a Gift</button>
         <div id="giftStatus">
-            <h2>Gift Revelations</h2>
+            <h2>Gift Status</h2>
             <ul id="giftStatusList"></ul>
         </div>
     </div>
 
-    <script>
-        const gifts = [
-            "Magic Wand", "Enchanted Mirror", "Flying Carpet", "Crystal Ball",
-            "Invisibility Cloak", "Phoenix Feather", "Dragon Egg", "Time Turner",
-            "Bottomless Bag", "Unicorn Horn", "Mermaid's Pearl", "Fairy Dust",
-            "Golden Compass", "Magical Lamp", "Singing Harp", "Levitation Boots"
-        ];
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getDatabase, ref, push, get, onValue, set } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
-        const nameInput = document.getElementById('nameInput');
-        const pickButton = document.getElementById('pickButton');
-        const giftDisplay = document.getElementById('giftDisplay');
-        const giftStatusList = document.getElementById('giftStatusList');
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1QTxxpjHrDzCsQj23rFxA7rQXcgwqgiU",
+            authDomain: "gift-randomizer.firebaseapp.com",
+            projectId: "gift-randomizer",
+            storageBucket: "gift-randomizer.appspot.com",
+            messagingSenderId: "1056233098101",
+            appId: "1:1056233098101:web:b2b228a1593d6c2aebe13c",
+            measurementId: "G-HPQ9C898SW",
+            databaseURL: "https://gift-randomizer-default-rtdb.asia-southeast1.firebasedatabase.app" // Updated URL
+        };
 
-        let giftStatus = JSON.parse(localStorage.getItem('giftStatus')) || {};
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
 
-        function updateGiftStatus() {
-            giftStatusList.innerHTML = '';
-            for (const [name, gift] of Object.entries(giftStatus)) {
-                const li = document.createElement('li');
-                li.textContent = `${name}: ${gift}`;
-                giftStatusList.appendChild(li);
-            }
-        }
-
-        function manualResetGiftStatus() {
-            giftStatus = {};
-            localStorage.setItem('giftStatus', JSON.stringify(giftStatus));
-            updateGiftStatus();
-        }
-
-        updateGiftStatus();
-
-        pickButton.addEventListener('click', () => {
-            const name = nameInput.value.trim();
-            if (name) {
-                if (giftStatus[name]) {
-                    giftDisplay.textContent = `${name}, you've already received: ${giftStatus[name]}`;
-                } else {
-                    const gift = gifts[Math.floor(Math.random() * gifts.length)];
-                    giftStatus[name] = gift;
-                    localStorage.setItem('giftStatus', JSON.stringify(giftStatus));
-                    giftDisplay.textContent = `${name}, your magical gift is: ${gift}`;
-                    updateGiftStatus();
-                }
-            } else {
-                giftDisplay.textContent = 'Please enter your name first!';
-            }
+        signInAnonymously(auth).catch((error) => {
+            console.error("Error signing in anonymously:", error);
         });
 
-        // Bouncing and sparkling gift icons
-        function createGiftIcon() {
-            const icon = document.createElement('div');
-            icon.textContent = '🎁';
-            icon.classList.add('gift-icon');
-            icon.style.left = `${Math.random() * 100}vw`;
-            icon.style.top = `${Math.random() * 100}vh`;
-            icon.style.animationDuration = `${Math.random() * 2 + 2}s`;
-            document.body.appendChild(icon);
+        const gifts = [
+            "Túi Labubu Blind Box",
+            "Kẹp giấy Labubu Blind Box",
+            "Đồ kẹp polaroid Candy Bear",
+            "Miffy 10cm",
+            "Miffy Móc chìa khóa",
+            "CryBaby Flower Blind Box",
+            "Mền tiên cá ariel disney",
+            "Poster Brat (fan-made)",
+            "Sổ VanGogh Museum",
+            "Sổ claude monet",
+            "2 tách trà gốm"
+        ];
 
-            setTimeout(() => {
-                icon.remove();
-            }, 5000);
+        async function pickRandomGift() {
+            const name = document.getElementById('nameInput').value.trim();
+            if (!name) {
+                alert('Please enter your name first!');
+                return;
+            }
+
+            if (localStorage.getItem('giftPicked')) {
+                alert('You have already picked a gift!');
+                return;
+            }
+
+            const pickedGiftsRef = ref(database, 'pickedGifts');
+            const snapshot = await get(pickedGiftsRef);
+            const pickedGifts = snapshot.val() || {};
+
+            const availableGifts = gifts.filter(gift => !Object.values(pickedGifts).some(picked => picked.gift === gift));
+
+            if (availableGifts.length === 0) {
+                alert('Sorry, all gifts have been picked!');
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * availableGifts.length);
+            const selectedGift = availableGifts[randomIndex];
+            const result = `${name} receives ${selectedGift}`;
+
+            await push(pickedGiftsRef, { name: name, gift: selectedGift });
+
+            document.getElementById('giftDisplay').textContent = result;
+            localStorage.setItem('giftPicked', 'true');
+            localStorage.setItem('selectedGift', result);
+            document.getElementById('pickButton').disabled = true;
+            document.getElementById('nameInput').disabled = true;
         }
 
-        setInterval(createGiftIcon, 500);
+        function updateGiftStatus(pickedGifts) {
+            const giftStatusList = document.getElementById('giftStatusList');
+            giftStatusList.innerHTML = '';
+            
+            for (const [key, value] of Object.entries(pickedGifts)) {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${value.name} received ${value.gift}`;
+                giftStatusList.appendChild(listItem);
+            }
+        }
+
+        window.onload = function() {
+            if (localStorage.getItem('giftPicked')) {
+                const savedResult = localStorage.getItem('selectedGift');
+                document.getElementById('giftDisplay').textContent = savedResult;
+                document.getElementById('pickButton').disabled = true;
+                document.getElementById('nameInput').disabled = true;
+            }
+
+            const pickedGiftsRef = ref(database, 'pickedGifts');
+            onValue(pickedGiftsRef, (snapshot) => {
+                const pickedGifts = snapshot.val() || {};
+                updateGiftStatus(pickedGifts);
+            });
+        }
+
+        document.getElementById('pickButton').addEventListener('click', pickRandomGift);
+
+        // New function to manually reset gift status
+        async function manualResetGiftStatus() {
+            const database = getDatabase();
+            const pickedGiftsRef = ref(database, 'pickedGifts');
+            try {
+                await set(pickedGiftsRef, null);
+                console.log('All gifts have been reset successfully!');
+                // Optionally, update the UI if the page is open
+                document.getElementById('giftDisplay').textContent = 'Enter your name and click the button to pick a random gift!';
+                document.getElementById('pickButton').disabled = false;
+                document.getElementById('nameInput').disabled = false;
+                document.getElementById('nameInput').value = '';
+                document.getElementById('giftStatusList').innerHTML = '';
+            } catch (error) {
+                console.error("Error resetting gifts:", error);
+            }
+        }
 
         // Make the function available globally
         window.manualResetGiftStatus = manualResetGiftStatus;
