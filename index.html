@@ -67,7 +67,36 @@
         <button id="pickButton" onclick="pickRandomGift()">Pick a Gift</button>
     </div>
 
-    <script>
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+
+    <!-- Add Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+
+  <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyB1QTxxpjHrDzCsQj23rFxA7rQXcgwqgiU",
+    authDomain: "gift-randomizer.firebaseapp.com",
+    projectId: "gift-randomizer",
+    storageBucket: "gift-randomizer.appspot.com",
+    messagingSenderId: "1056233098101",
+    appId: "1:1056233098101:web:b2b228a1593d6c2aebe13c",
+    measurementId: "G-HPQ9C898SW"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+
         const gifts = [
             "Túi Labubu Blind Box",
             "Kẹp giấy Labubu Blind Box",
@@ -94,16 +123,27 @@
                 return;
             }
 
-            const randomIndex = Math.floor(Math.random() * gifts.length);
-            const selectedGift = gifts[randomIndex];
-            const result = `${name} receives ${selectedGift}`;
-            document.getElementById('giftDisplay').textContent = result;
-            
-            localStorage.setItem('giftPicked', 'true');
-            localStorage.setItem('selectedGift', result);
+            firebase.database().ref('pickedGifts').once('value', function(snapshot) {
+                let pickedGifts = snapshot.val() || {};
+                let availableGifts = gifts.filter(gift => !Object.values(pickedGifts).includes(gift));
 
-            document.getElementById('pickButton').disabled = true;
-            document.getElementById('nameInput').disabled = true;
+                if (availableGifts.length === 0) {
+                    alert('Sorry, all gifts have been picked!');
+                    return;
+                }
+
+                const randomIndex = Math.floor(Math.random() * availableGifts.length);
+                const selectedGift = availableGifts[randomIndex];
+                const result = `${name} receives ${selectedGift}`;
+
+                firebase.database().ref('pickedGifts').push(selectedGift);
+
+                document.getElementById('giftDisplay').textContent = result;
+                localStorage.setItem('giftPicked', 'true');
+                localStorage.setItem('selectedGift', result);
+                document.getElementById('pickButton').disabled = true;
+                document.getElementById('nameInput').disabled = true;
+            });
         }
 
         window.onload = function() {
