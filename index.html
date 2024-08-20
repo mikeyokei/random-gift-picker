@@ -5,7 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Random Gift Picker</title>
     <style>
-        /* Your existing CSS here */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+        }
+        #giftDisplay {
+            font-size: 18px;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            min-height: 50px;
+        }
+        input, button {
+            font-size: 16px;
+            padding: 10px;
+            margin: 10px 0;
+            width: calc(100% - 22px);
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -13,31 +64,10 @@
         <h1>Random Gift Picker</h1>
         <input type="text" id="nameInput" placeholder="Enter your name" required>
         <div id="giftDisplay">Enter your name and click the button to pick a random gift!</div>
-        <button id="pickButton">Pick a Gift</button>
+        <button id="pickButton" onclick="pickRandomGift()">Pick a Gift</button>
     </div>
 
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics.js";
-
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyB1QTxxpjHrDzCsQj23rFxA7rQXcgwqgiU",
-            authDomain: "gift-randomizer.firebaseapp.com",
-            projectId: "gift-randomizer",
-            storageBucket: "gift-randomizer.appspot.com",
-            messagingSenderId: "1056233098101",
-            appId: "1:1056233098101:web:b2b228a1593d6c2aebe13c",
-            measurementId: "G-HPQ9C898SW"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const database = getDatabase(app);
-
+    <script>
         const gifts = [
             "Túi Labubu Blind Box",
             "Kẹp giấy Labubu Blind Box",
@@ -64,27 +94,16 @@
                 return;
             }
 
-            get(ref(database, 'pickedGifts')).then((snapshot) => {
-                let pickedGifts = snapshot.val() || {};
-                let availableGifts = gifts.filter(gift => !Object.values(pickedGifts).includes(gift));
+            const randomIndex = Math.floor(Math.random() * gifts.length);
+            const selectedGift = gifts[randomIndex];
+            const result = `${name} receives ${selectedGift}`;
+            document.getElementById('giftDisplay').textContent = result;
+            
+            localStorage.setItem('giftPicked', 'true');
+            localStorage.setItem('selectedGift', result);
 
-                if (availableGifts.length === 0) {
-                    alert('Sorry, all gifts have been picked!');
-                    return;
-                }
-
-                const randomIndex = Math.floor(Math.random() * availableGifts.length);
-                const selectedGift = availableGifts[randomIndex];
-                const result = `${name} receives ${selectedGift}`;
-
-                push(ref(database, 'pickedGifts'), selectedGift);
-
-                document.getElementById('giftDisplay').textContent = result;
-                localStorage.setItem('giftPicked', 'true');
-                localStorage.setItem('selectedGift', result);
-                document.getElementById('pickButton').disabled = true;
-                document.getElementById('nameInput').disabled = true;
-            });
+            document.getElementById('pickButton').disabled = true;
+            document.getElementById('nameInput').disabled = true;
         }
 
         window.onload = function() {
@@ -95,8 +114,6 @@
                 document.getElementById('nameInput').disabled = true;
             }
         }
-
-        document.getElementById('pickButton').addEventListener('click', pickRandomGift);
     </script>
 </body>
 </html>
