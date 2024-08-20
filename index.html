@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Magical Gift Picker</title>
     <style>
-        /* ... (previous CSS remains the same) ... */
+        /* ... (CSS remains the same) ... */
     </style>
 </head>
 <body>
@@ -21,76 +21,73 @@
     </div>
 
     <script>
-        // Explicitly declare manualResetGiftStatus in the global scope
-        window.manualResetGiftStatus = function() {};
+        const gifts = [
+            "Magic Wand", "Enchanted Mirror", "Flying Carpet", "Crystal Ball",
+            "Invisibility Cloak", "Phoenix Feather", "Dragon Egg", "Time Turner",
+            "Bottomless Bag", "Unicorn Horn", "Mermaid's Pearl", "Fairy Dust",
+            "Golden Compass", "Magical Lamp", "Singing Harp", "Levitation Boots"
+        ];
 
-        (function() {
-            const gifts = [
-                "Magic Wand", "Enchanted Mirror", "Flying Carpet", "Crystal Ball",
-                "Invisibility Cloak", "Phoenix Feather", "Dragon Egg", "Time Turner",
-                "Bottomless Bag", "Unicorn Horn", "Mermaid's Pearl", "Fairy Dust",
-                "Golden Compass", "Magical Lamp", "Singing Harp", "Levitation Boots"
-            ];
+        const nameInput = document.getElementById('nameInput');
+        const pickButton = document.getElementById('pickButton');
+        const giftDisplay = document.getElementById('giftDisplay');
+        const giftStatusList = document.getElementById('giftStatusList');
 
-            const nameInput = document.getElementById('nameInput');
-            const pickButton = document.getElementById('pickButton');
-            const giftDisplay = document.getElementById('giftDisplay');
-            const giftStatusList = document.getElementById('giftStatusList');
+        let giftStatus = JSON.parse(localStorage.getItem('giftStatus')) || {};
 
-            let giftStatus = JSON.parse(localStorage.getItem('giftStatus')) || {};
-
-            function updateGiftStatus() {
-                giftStatusList.innerHTML = '';
-                for (const [name, gift] of Object.entries(giftStatus)) {
-                    const li = document.createElement('li');
-                    li.textContent = `${name}: ${gift}`;
-                    giftStatusList.appendChild(li);
-                }
+        function updateGiftStatus() {
+            giftStatusList.innerHTML = '';
+            for (const [name, gift] of Object.entries(giftStatus)) {
+                const li = document.createElement('li');
+                li.textContent = `${name}: ${gift}`;
+                giftStatusList.appendChild(li);
             }
+        }
 
-            // Redefine manualResetGiftStatus with the actual implementation
-            window.manualResetGiftStatus = function() {
-                giftStatus = {};
-                localStorage.setItem('giftStatus', JSON.stringify(giftStatus));
-                updateGiftStatus();
-            };
-
+        function manualResetGiftStatus() {
+            giftStatus = {};
+            localStorage.setItem('giftStatus', JSON.stringify(giftStatus));
             updateGiftStatus();
+        }
 
-            pickButton.addEventListener('click', () => {
-                const name = nameInput.value.trim();
-                if (name) {
-                    if (giftStatus[name]) {
-                        giftDisplay.textContent = `${name}, you've already received: ${giftStatus[name]}`;
-                    } else {
-                        const gift = gifts[Math.floor(Math.random() * gifts.length)];
-                        giftStatus[name] = gift;
-                        localStorage.setItem('giftStatus', JSON.stringify(giftStatus));
-                        giftDisplay.textContent = `${name}, your magical gift is: ${gift}`;
-                        updateGiftStatus();
-                    }
+        updateGiftStatus();
+
+        pickButton.addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            if (name) {
+                if (giftStatus[name]) {
+                    giftDisplay.textContent = `${name}, you've already received: ${giftStatus[name]}`;
                 } else {
-                    giftDisplay.textContent = 'Please enter your name first!';
+                    const gift = gifts[Math.floor(Math.random() * gifts.length)];
+                    giftStatus[name] = gift;
+                    localStorage.setItem('giftStatus', JSON.stringify(giftStatus));
+                    giftDisplay.textContent = `${name}, your magical gift is: ${gift}`;
+                    updateGiftStatus();
                 }
-            });
-
-            // Bouncing and sparkling gift icons
-            function createGiftIcon() {
-                const icon = document.createElement('div');
-                icon.textContent = '🎁';
-                icon.classList.add('gift-icon');
-                icon.style.left = `${Math.random() * 100}vw`;
-                icon.style.top = `${Math.random() * 100}vh`;
-                icon.style.animationDuration = `${Math.random() * 2 + 2}s`;
-                document.body.appendChild(icon);
-
-                setTimeout(() => {
-                    icon.remove();
-                }, 5000);
+            } else {
+                giftDisplay.textContent = 'Please enter your name first!';
             }
+        });
 
-            setInterval(createGiftIcon, 500);
-        })();
+        // Bouncing and sparkling gift icons
+        function createGiftIcon() {
+            const icon = document.createElement('div');
+            icon.textContent = '🎁';
+            icon.classList.add('gift-icon');
+            icon.style.left = `${Math.random() * 100}vw`;
+            icon.style.top = `${Math.random() * 100}vh`;
+            icon.style.animationDuration = `${Math.random() * 2 + 2}s`;
+            document.body.appendChild(icon);
+
+            setTimeout(() => {
+                icon.remove();
+            }, 5000);
+        }
+
+        setInterval(createGiftIcon, 500);
+
+        // Make the function available globally
+        window.manualResetGiftStatus = manualResetGiftStatus;
     </script>
 </body>
 </html>
