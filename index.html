@@ -71,17 +71,22 @@
             background-color: #f0f0f0;
             border-radius: 3px;
         }
+        #feedback {
+            color: #ff0000;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Random Gift Picker</h1>
-        <input type="text" id="nameInput" placeholder="Enter your name" required>
-        <div id="giftDisplay">Enter your name and click the button to pick a random gift!</div>
-        <button id="pickButton">Pick a Gift</button>
+        <input type="text" id="nameInput" placeholder="Enter your name" required aria-label="Your name">
+        <div id="giftDisplay" aria-live="polite">Enter your name and click the button to pick a random gift!</div>
+        <button id="pickButton" aria-label="Pick a Gift">Pick a Gift</button>
+        <div id="feedback" aria-live="assertive"></div>
         <div id="giftStatus">
             <h2>Gift Status</h2>
-            <ul id="giftStatusList"></ul>
+            <ul id="giftStatusList" aria-label="List of picked gifts"></ul>
         </div>
     </div>
 
@@ -100,7 +105,7 @@
             messagingSenderId: "1056233098101",
             appId: "1:1056233098101:web:b2b228a1593d6c2aebe13c",
             measurementId: "G-HPQ9C898SW",
-            databaseURL: "https://gift-randomizer-default-rtdb.asia-southeast1.firebasedatabase.app" // Updated URL
+            databaseURL: "https://gift-randomizer-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
 
         // Initialize Firebase
@@ -110,6 +115,7 @@
 
         signInAnonymously(auth).catch((error) => {
             console.error("Error signing in anonymously:", error);
+            showFeedback("An error occurred. Please try again later.");
         });
 
         const gifts = [
@@ -131,37 +137,43 @@
         async function pickRandomGift() {
             const name = document.getElementById('nameInput').value.trim();
             if (!name) {
-                alert('Please enter your name first!');
+                showFeedback('Please enter your name first!');
                 return;
             }
 
             if (localStorage.getItem('giftPicked')) {
-                alert('You have already picked a gift!');
+                showFeedback('You have already picked a gift!');
                 return;
             }
 
-            const pickedGiftsRef = ref(database, 'pickedGifts');
-            const snapshot = await get(pickedGiftsRef);
-            const pickedGifts = snapshot.val() || {};
+            try {
+                const pickedGiftsRef = ref(database, 'pickedGifts');
+                const snapshot = await get(pickedGiftsRef);
+                const pickedGifts = snapshot.val() || {};
 
-            const availableGifts = gifts.filter(gift => !Object.values(pickedGifts).some(picked => picked.gift === gift));
+                const availableGifts = gifts.filter(gift => !Object.values(pickedGifts).some(picked => picked.gift === gift));
 
-            if (availableGifts.length === 0) {
-                alert('Sorry, all gifts have been picked!');
-                return;
+                if (availableGifts.length === 0) {
+                    showFeedback('Sorry, all gifts have been picked!');
+                    return;
+                }
+
+                const randomIndex = Math.floor(Math.random() * availableGifts.length);
+                const selectedGift = availableGifts[randomIndex];
+                const result = `${name} receives ${selectedGift}`;
+
+                await push(pickedGiftsRef, { name: name, gift: selectedGift });
+
+                document.getElementById('giftDisplay').textContent = result;
+                localStorage.setItem('giftPicked', 'true');
+                localStorage.setItem('selectedGift', result);
+                document.getElementById('pickButton').disabled = true;
+                document.getElementById('nameInput').disabled = true;
+                showFeedback('Gift picked successfully!', 'green');
+            } catch (error) {
+                console.error("Error picking gift:", error);
+                showFeedback('An error occurred. Please try again.');
             }
-
-            const randomIndex = Math.floor(Math.random() * availableGifts.length);
-            const selectedGift = availableGifts[randomIndex];
-            const result = `${name} receives ${selectedGift}`;
-
-            await push(pickedGiftsRef, { name: name, gift: selectedGift });
-
-            document.getElementById('giftDisplay').textContent = result;
-            localStorage.setItem('giftPicked', 'true');
-            localStorage.setItem('selectedGift', result);
-            document.getElementById('pickButton').disabled = true;
-            document.getElementById('nameInput').disabled = true;
         }
 
         function updateGiftStatus(pickedGifts) {
@@ -173,6 +185,15 @@
                 listItem.textContent = `${value.name} received ${value.gift}`;
                 giftStatusList.appendChild(listItem);
             }
+        }
+
+        function showFeedback(message, color = 'red') {
+            const feedbackElement = document.getElementById('feedback');
+            feedbackElement.textContent = message;
+            feedbackElement.style.color = color;
+            setTimeout(() => {
+                feedbackElement.textContent = '';
+            }, 5000);
         }
 
         window.onload = function() {
@@ -199,14 +220,17 @@
             try {
                 await set(pickedGiftsRef, null);
                 console.log('All gifts have been reset successfully!');
-                // Optionally, update the UI if the page is open
                 document.getElementById('giftDisplay').textContent = 'Enter your name and click the button to pick a random gift!';
                 document.getElementById('pickButton').disabled = false;
                 document.getElementById('nameInput').disabled = false;
                 document.getElementById('nameInput').value = '';
                 document.getElementById('giftStatusList').innerHTML = '';
+                localStorage.removeItem('giftPicked');
+                localStorage.removeItem('selectedGift');
+                showFeedback('All gifts have been reset successfully!', 'green');
             } catch (error) {
                 console.error("Error resetting gifts:", error);
+                showFeedback('An error occurred while resetting gifts. Please try again.');
             }
         }
 
