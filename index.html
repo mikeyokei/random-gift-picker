@@ -21,73 +21,76 @@
     </div>
 
     <script>
-        const gifts = [
-            "Magic Wand", "Enchanted Mirror", "Flying Carpet", "Crystal Ball",
-            "Invisibility Cloak", "Phoenix Feather", "Dragon Egg", "Time Turner",
-            "Bottomless Bag", "Unicorn Horn", "Mermaid's Pearl", "Fairy Dust",
-            "Golden Compass", "Magical Lamp", "Singing Harp", "Levitation Boots"
-        ];
+        // Explicitly declare manualResetGiftStatus in the global scope
+        window.manualResetGiftStatus = function() {};
 
-        const nameInput = document.getElementById('nameInput');
-        const pickButton = document.getElementById('pickButton');
-        const giftDisplay = document.getElementById('giftDisplay');
-        const giftStatusList = document.getElementById('giftStatusList');
+        (function() {
+            const gifts = [
+                "Magic Wand", "Enchanted Mirror", "Flying Carpet", "Crystal Ball",
+                "Invisibility Cloak", "Phoenix Feather", "Dragon Egg", "Time Turner",
+                "Bottomless Bag", "Unicorn Horn", "Mermaid's Pearl", "Fairy Dust",
+                "Golden Compass", "Magical Lamp", "Singing Harp", "Levitation Boots"
+            ];
 
-        let giftStatus = JSON.parse(localStorage.getItem('giftStatus')) || {};
+            const nameInput = document.getElementById('nameInput');
+            const pickButton = document.getElementById('pickButton');
+            const giftDisplay = document.getElementById('giftDisplay');
+            const giftStatusList = document.getElementById('giftStatusList');
 
-        function updateGiftStatus() {
-            giftStatusList.innerHTML = '';
-            for (const [name, gift] of Object.entries(giftStatus)) {
-                const li = document.createElement('li');
-                li.textContent = `${name}: ${gift}`;
-                giftStatusList.appendChild(li);
-            }
-        }
+            let giftStatus = JSON.parse(localStorage.getItem('giftStatus')) || {};
 
-        function manualResetGiftStatus() {
-            giftStatus = {};
-            localStorage.setItem('giftStatus', JSON.stringify(giftStatus));
-            updateGiftStatus();
-        }
-
-        // Make the function available globally
-        window.manualResetGiftStatus = manualResetGiftStatus;
-
-        updateGiftStatus();
-
-        pickButton.addEventListener('click', () => {
-            const name = nameInput.value.trim();
-            if (name) {
-                if (giftStatus[name]) {
-                    giftDisplay.textContent = `${name}, you've already received: ${giftStatus[name]}`;
-                } else {
-                    const gift = gifts[Math.floor(Math.random() * gifts.length)];
-                    giftStatus[name] = gift;
-                    localStorage.setItem('giftStatus', JSON.stringify(giftStatus));
-                    giftDisplay.textContent = `${name}, your magical gift is: ${gift}`;
-                    updateGiftStatus();
+            function updateGiftStatus() {
+                giftStatusList.innerHTML = '';
+                for (const [name, gift] of Object.entries(giftStatus)) {
+                    const li = document.createElement('li');
+                    li.textContent = `${name}: ${gift}`;
+                    giftStatusList.appendChild(li);
                 }
-            } else {
-                giftDisplay.textContent = 'Please enter your name first!';
             }
-        });
 
-        // Bouncing and sparkling gift icons
-        function createGiftIcon() {
-            const icon = document.createElement('div');
-            icon.textContent = '🎁';
-            icon.classList.add('gift-icon');
-            icon.style.left = `${Math.random() * 100}vw`;
-            icon.style.top = `${Math.random() * 100}vh`;
-            icon.style.animationDuration = `${Math.random() * 2 + 2}s`;
-            document.body.appendChild(icon);
+            // Redefine manualResetGiftStatus with the actual implementation
+            window.manualResetGiftStatus = function() {
+                giftStatus = {};
+                localStorage.setItem('giftStatus', JSON.stringify(giftStatus));
+                updateGiftStatus();
+            };
 
-            setTimeout(() => {
-                icon.remove();
-            }, 5000);
-        }
+            updateGiftStatus();
 
-        setInterval(createGiftIcon, 500);
+            pickButton.addEventListener('click', () => {
+                const name = nameInput.value.trim();
+                if (name) {
+                    if (giftStatus[name]) {
+                        giftDisplay.textContent = `${name}, you've already received: ${giftStatus[name]}`;
+                    } else {
+                        const gift = gifts[Math.floor(Math.random() * gifts.length)];
+                        giftStatus[name] = gift;
+                        localStorage.setItem('giftStatus', JSON.stringify(giftStatus));
+                        giftDisplay.textContent = `${name}, your magical gift is: ${gift}`;
+                        updateGiftStatus();
+                    }
+                } else {
+                    giftDisplay.textContent = 'Please enter your name first!';
+                }
+            });
+
+            // Bouncing and sparkling gift icons
+            function createGiftIcon() {
+                const icon = document.createElement('div');
+                icon.textContent = '🎁';
+                icon.classList.add('gift-icon');
+                icon.style.left = `${Math.random() * 100}vw`;
+                icon.style.top = `${Math.random() * 100}vh`;
+                icon.style.animationDuration = `${Math.random() * 2 + 2}s`;
+                document.body.appendChild(icon);
+
+                setTimeout(() => {
+                    icon.remove();
+                }, 5000);
+            }
+
+            setInterval(createGiftIcon, 500);
+        })();
     </script>
 </body>
 </html>
