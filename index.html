@@ -21,10 +21,10 @@
             padding: 20px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             text-align: center;
-            max-width: 400px;
+            max-width: 600px;
             width: 100%;
         }
-        h1 {
+        h1, h2 {
             color: #333;
         }
         #giftDisplay {
@@ -57,6 +57,20 @@
             background-color: #cccccc;
             cursor: not-allowed;
         }
+        #giftStatus {
+            margin-top: 20px;
+            text-align: left;
+        }
+        #giftStatus ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #giftStatus li {
+            margin-bottom: 5px;
+            padding: 5px;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
@@ -65,12 +79,17 @@
         <input type="text" id="nameInput" placeholder="Enter your name" required>
         <div id="giftDisplay">Enter your name and click the button to pick a random gift!</div>
         <button id="pickButton">Pick a Gift</button>
+        <div id="giftStatus">
+            <h2>Gift Status</h2>
+            <ul id="giftStatusList"></ul>
+        </div>
     </div>
 
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getDatabase, ref, push, get, set } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+        import { getDatabase, ref, push, get, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -86,6 +105,11 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        const auth = getAuth(app);
+
+        signInAnonymously(auth).catch((error) => {
+            console.error("Error signing in anonymously:", error);
+        });
 
         const gifts = [
             "Túi Labubu Blind Box",
@@ -117,7 +141,7 @@
             const snapshot = await get(pickedGiftsRef);
             const pickedGifts = snapshot.val() || {};
 
-            const availableGifts = gifts.filter(gift => !Object.values(pickedGifts).includes(gift));
+            const availableGifts = gifts.filter(gift => !Object.values(pickedGifts).some(picked => picked.gift === gift));
 
             if (availableGifts.length === 0) {
                 alert('Sorry, all gifts have been picked!');
@@ -128,13 +152,24 @@
             const selectedGift = availableGifts[randomIndex];
             const result = `${name} receives ${selectedGift}`;
 
-            await push(pickedGiftsRef, selectedGift);
+            await push(pickedGiftsRef, { name: name, gift: selectedGift });
 
             document.getElementById('giftDisplay').textContent = result;
             localStorage.setItem('giftPicked', 'true');
             localStorage.setItem('selectedGift', result);
             document.getElementById('pickButton').disabled = true;
             document.getElementById('nameInput').disabled = true;
+        }
+
+        function updateGiftStatus(pickedGifts) {
+            const giftStatusList = document.getElementById('giftStatusList');
+            giftStatusList.innerHTML = '';
+            
+            for (const [key, value] of Object.entries(pickedGifts)) {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${value.name} received ${value.gift}`;
+                giftStatusList.appendChild(listItem);
+            }
         }
 
         window.onload = function() {
@@ -144,6 +179,12 @@
                 document.getElementById('pickButton').disabled = true;
                 document.getElementById('nameInput').disabled = true;
             }
+
+            const pickedGiftsRef = ref(database, 'pickedGifts');
+            onValue(pickedGiftsRef, (snapshot) => {
+                const pickedGifts = snapshot.val() || {};
+                updateGiftStatus(pickedGifts);
+            });
         }
 
         document.getElementById('pickButton').addEventListener('click', pickRandomGift);
