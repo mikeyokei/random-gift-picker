@@ -64,10 +64,29 @@
         <h1>Random Gift Picker</h1>
         <input type="text" id="nameInput" placeholder="Enter your name" required>
         <div id="giftDisplay">Enter your name and click the button to pick a random gift!</div>
-        <button id="pickButton" onclick="pickRandomGift()">Pick a Gift</button>
+        <button id="pickButton">Pick a Gift</button>
     </div>
 
-    <script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getDatabase, ref, push, get, set } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1QTxxpjHrDzCsQj23rFxA7rQXcgwqgiU",
+            authDomain: "gift-randomizer.firebaseapp.com",
+            projectId: "gift-randomizer",
+            storageBucket: "gift-randomizer.appspot.com",
+            messagingSenderId: "1056233098101",
+            appId: "1:1056233098101:web:b2b228a1593d6c2aebe13c",
+            measurementId: "G-HPQ9C898SW"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
         const gifts = [
             "Túi Labubu Blind Box",
             "Kẹp giấy Labubu Blind Box",
@@ -82,7 +101,7 @@
             "2 tách trà gốm"
         ];
 
-        function pickRandomGift() {
+        async function pickRandomGift() {
             const name = document.getElementById('nameInput').value.trim();
             if (!name) {
                 alert('Please enter your name first!');
@@ -94,14 +113,26 @@
                 return;
             }
 
-            const randomIndex = Math.floor(Math.random() * gifts.length);
-            const selectedGift = gifts[randomIndex];
+            const pickedGiftsRef = ref(database, 'pickedGifts');
+            const snapshot = await get(pickedGiftsRef);
+            const pickedGifts = snapshot.val() || {};
+
+            const availableGifts = gifts.filter(gift => !Object.values(pickedGifts).includes(gift));
+
+            if (availableGifts.length === 0) {
+                alert('Sorry, all gifts have been picked!');
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * availableGifts.length);
+            const selectedGift = availableGifts[randomIndex];
             const result = `${name} receives ${selectedGift}`;
+
+            await push(pickedGiftsRef, selectedGift);
+
             document.getElementById('giftDisplay').textContent = result;
-            
             localStorage.setItem('giftPicked', 'true');
             localStorage.setItem('selectedGift', result);
-
             document.getElementById('pickButton').disabled = true;
             document.getElementById('nameInput').disabled = true;
         }
@@ -114,6 +145,8 @@
                 document.getElementById('nameInput').disabled = true;
             }
         }
+
+        document.getElementById('pickButton').addEventListener('click', pickRandomGift);
     </script>
 </body>
 </html>
