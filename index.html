@@ -86,9 +86,14 @@
         #redrawButton:hover {
             background-color: #1976D2;
         }
+        #adminSection {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
         #resetButton {
             background-color: #f44336;
-            margin-top: 20px;
         }
         #resetButton:hover {
             background-color: #d32f2f;
@@ -118,7 +123,14 @@
             </div>
         </div>
 
-        <button id="resetButton" aria-label="Reset Gift Status">Reset All Gift Status</button>
+        <div class="section">
+            <h2>Admin Section</h2>
+            <input type="password" id="adminPassword" placeholder="Enter admin password" aria-label="Admin password">
+            <button id="adminLogin">Login as Admin</button>
+            <div id="adminSection">
+                <button id="resetButton" aria-label="Reset All Gift Status">Reset All Gift Status</button>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -273,6 +285,36 @@
             }, 5000);
         }
 
+        async function resetAllGiftStatus() {
+            try {
+                await set(ref(database, 'pickedGifts'), null);
+                await set(ref(database, 'redrawGifts'), null);
+                localStorage.removeItem('giftPicked');
+                localStorage.removeItem('selectedGift');
+                document.getElementById('giftDisplay').textContent = 'Enter your name and click the button to pick a random gift!';
+                document.getElementById('redrawGiftDisplay').textContent = 'Enter your name and click the button to redraw a gift!';
+                document.getElementById('pickButton').disabled = false;
+                document.getElementById('nameInput').disabled = false;
+                document.getElementById('redrawButton').disabled = false;
+                document.getElementById('redrawNameInput').disabled = false;
+                showFeedback('All gift statuses have been reset!', 'green');
+            } catch (error) {
+                console.error("Error resetting gift status:", error);
+                showFeedback('An error occurred while resetting. Please try again.');
+            }
+        }
+
+        function checkAdminPassword() {
+            const password = document.getElementById('adminPassword').value;
+            // Replace 'your_admin_password' with your actual admin password
+            if (password === 'm1k3yokei') {
+                document.getElementById('adminSection').style.display = 'block';
+                showFeedback('Admin login successful!', 'green');
+            } else {
+                showFeedback('Incorrect admin password!');
+            }
+        }
+
         window.onload = function() {
             if (localStorage.getItem('giftPicked')) {
                 const savedResult = localStorage.getItem('selectedGift');
@@ -296,42 +338,8 @@
 
         document.getElementById('pickButton').addEventListener('click', pickRandomGift);
         document.getElementById('redrawButton').addEventListener('click', redrawGift);
-
-        async function manualResetGiftStatus() {
-            const database = getDatabase();
-            const pickedGiftsRef = ref(database, 'pickedGifts');
-            const redrawGiftsRef = ref(database, 'redrawGifts');
-            try {
-                await set(pickedGiftsRef, null);
-                await set(redrawGiftsRef, null);
-                console.log('All gifts have been reset successfully!');
-                document.getElementById('giftDisplay').textContent = 'Enter your name and click the button to pick a random gift!';
-                document.getElementById('redrawGiftDisplay').textContent = 'Enter your name and click the button to redraw a gift!';
-                document.getElementById('pickButton').disabled = false;
-                document.getElementById('redrawButton').disabled = false;
-                document.getElementById('nameInput').disabled = false;
-                document.getElementById('redrawNameInput').disabled = false;
-                document.getElementById('nameInput').value = '';
-                document.getElementById('redrawNameInput').value = '';
-                document.getElementById('giftStatusList').innerHTML = '';
-                document.getElementById('redrawGiftStatusList').innerHTML = '';
-                localStorage.removeItem('giftPicked');
-                localStorage.removeItem('selectedGift');
-                showFeedback('All gifts have been reset successfully!', 'green');
-            } catch (error) {
-                console.error("Error resetting gifts:", error);
-                showFeedback('An error occurred while resetting gifts. Please try again.');
-            }
-        }
-
-        document.getElementById('resetButton').addEventListener('click', async () => {
-            if (confirm('Are you sure you want to reset all gift statuses? This action cannot be undone.')) {
-                await manualResetGiftStatus();
-            }
-        });
-
-        // Make the function available globally
-        window.manualResetGiftStatus = manualResetGiftStatus;
+        document.getElementById('adminLogin').addEventListener('click', checkAdminPassword);
+        document.getElementById('resetButton').addEventListener('click', resetAllGiftStatus);
     </script>
 </body>
 </html>
