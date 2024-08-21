@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Gift Picker</title>
+    <title>Random Gift Picker with Redraw</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -27,7 +27,7 @@
         h1, h2 {
             color: #333;
         }
-        #giftDisplay {
+        #giftDisplay, #redrawGiftDisplay {
             font-size: 18px;
             margin: 20px 0;
             padding: 10px;
@@ -57,15 +57,15 @@
             background-color: #cccccc;
             cursor: not-allowed;
         }
-        #giftStatus {
+        #giftStatus, #redrawGiftStatus {
             margin-top: 20px;
             text-align: left;
         }
-        #giftStatus ul {
+        #giftStatus ul, #redrawGiftStatus ul {
             list-style-type: none;
             padding: 0;
         }
-        #giftStatus li {
+        #giftStatus li, #redrawGiftStatus li {
             margin-bottom: 5px;
             padding: 5px;
             background-color: #f0f0f0;
@@ -74,6 +74,24 @@
         #feedback {
             color: #ff0000;
             margin-top: 10px;
+        }
+        .section {
+            border-top: 1px solid #ddd;
+            margin-top: 20px;
+            padding-top: 20px;
+        }
+        #redrawButton {
+            background-color: #2196F3;
+        }
+        #redrawButton:hover {
+            background-color: #1976D2;
+        }
+        #resetButton {
+            background-color: #f44336;
+            margin-top: 20px;
+        }
+        #resetButton:hover {
+            background-color: #d32f2f;
         }
     </style>
 </head>
@@ -88,6 +106,19 @@
             <h2>Gift Status</h2>
             <ul id="giftStatusList" aria-label="List of picked gifts"></ul>
         </div>
+
+        <div class="section">
+            <h2>Redraw Section</h2>
+            <input type="text" id="redrawNameInput" placeholder="Enter your name for redraw" required aria-label="Your name for redraw">
+            <div id="redrawGiftDisplay" aria-live="polite">Enter your name and click the button to redraw a gift!</div>
+            <button id="redrawButton" aria-label="Redraw a Gift">Redraw a Gift</button>
+            <div id="redrawGiftStatus">
+                <h3>Redrawn Gift Status</h3>
+                <ul id="redrawGiftStatusList" aria-label="List of redrawn gifts"></ul>
+            </div>
+        </div>
+
+        <button id="resetButton" aria-label="Reset Gift Status">Reset All Gift Status</button>
     </div>
 
     <script type="module">
@@ -134,6 +165,17 @@
             "Molly nam châm blind box"
         ];
 
+        const redrawGifts = [
+            "Túi Labubu Blind Box",
+            "Kẹp giấy Labubu Blind Box",
+            "Miffy Móc chìa khóa",
+            "Mền tiên cá ariel disney",
+            "Poster Brat (fan-made)",
+            "Sổ VanGogh Museum",
+            "Sổ claude monet",
+            "2 tách trà gốm"
+        ];
+
         async function pickRandomGift() {
             const name = document.getElementById('nameInput').value.trim();
             if (!name) {
@@ -176,8 +218,43 @@
             }
         }
 
-        function updateGiftStatus(pickedGifts) {
-            const giftStatusList = document.getElementById('giftStatusList');
+        async function redrawGift() {
+            const name = document.getElementById('redrawNameInput').value.trim();
+            if (!name) {
+                showFeedback('Please enter your name for redraw!');
+                return;
+            }
+
+            try {
+                const redrawGiftsRef = ref(database, 'redrawGifts');
+                const snapshot = await get(redrawGiftsRef);
+                const pickedRedrawGifts = snapshot.val() || {};
+
+                const availableRedrawGifts = redrawGifts.filter(gift => !Object.values(pickedRedrawGifts).some(picked => picked.gift === gift));
+
+                if (availableRedrawGifts.length === 0) {
+                    showFeedback('Sorry, all redraw gifts have been picked!');
+                    return;
+                }
+
+                const randomIndex = Math.floor(Math.random() * availableRedrawGifts.length);
+                const selectedGift = availableRedrawGifts[randomIndex];
+                const result = `${name} redraws ${selectedGift}`;
+
+                await push(redrawGiftsRef, { name: name, gift: selectedGift });
+
+                document.getElementById('redrawGiftDisplay').textContent = result;
+                document.getElementById('redrawButton').disabled = true;
+                document.getElementById('redrawNameInput').disabled = true;
+                showFeedback('Gift redrawn successfully!', 'green');
+            } catch (error) {
+                console.error("Error redrawing gift:", error);
+                showFeedback('An error occurred. Please try again.');
+            }
+        }
+
+        function updateGiftStatus(pickedGifts, elementId) {
+            const giftStatusList = document.getElementById(elementId);
             giftStatusList.innerHTML = '';
             
             for (const [key, value] of Object.entries(pickedGifts)) {
@@ -207,24 +284,37 @@
             const pickedGiftsRef = ref(database, 'pickedGifts');
             onValue(pickedGiftsRef, (snapshot) => {
                 const pickedGifts = snapshot.val() || {};
-                updateGiftStatus(pickedGifts);
+                updateGiftStatus(pickedGifts, 'giftStatusList');
+            });
+
+            const redrawGiftsRef = ref(database, 'redrawGifts');
+            onValue(redrawGiftsRef, (snapshot) => {
+                const pickedRedrawGifts = snapshot.val() || {};
+                updateGiftStatus(pickedRedrawGifts, 'redrawGiftStatusList');
             });
         }
 
         document.getElementById('pickButton').addEventListener('click', pickRandomGift);
+        document.getElementById('redrawButton').addEventListener('click', redrawGift);
 
-        // New function to manually reset gift status
         async function manualResetGiftStatus() {
             const database = getDatabase();
             const pickedGiftsRef = ref(database, 'pickedGifts');
+            const redrawGiftsRef = ref(database, 'redrawGifts');
             try {
                 await set(pickedGiftsRef, null);
+                await set(redrawGiftsRef, null);
                 console.log('All gifts have been reset successfully!');
                 document.getElementById('giftDisplay').textContent = 'Enter your name and click the button to pick a random gift!';
+                document.getElementById('redrawGiftDisplay').textContent = 'Enter your name and click the button to redraw a gift!';
                 document.getElementById('pickButton').disabled = false;
+                document.getElementById('redrawButton').disabled = false;
                 document.getElementById('nameInput').disabled = false;
+                document.getElementById('redrawNameInput').disabled = false;
                 document.getElementById('nameInput').value = '';
+                document.getElementById('redrawNameInput').value = '';
                 document.getElementById('giftStatusList').innerHTML = '';
+                document.getElementById('redrawGiftStatusList').innerHTML = '';
                 localStorage.removeItem('giftPicked');
                 localStorage.removeItem('selectedGift');
                 showFeedback('All gifts have been reset successfully!', 'green');
@@ -233,6 +323,12 @@
                 showFeedback('An error occurred while resetting gifts. Please try again.');
             }
         }
+
+        document.getElementById('resetButton').addEventListener('click', async () => {
+            if (confirm('Are you sure you want to reset all gift statuses? This action cannot be undone.')) {
+                await manualResetGiftStatus();
+            }
+        });
 
         // Make the function available globally
         window.manualResetGiftStatus = manualResetGiftStatus;
