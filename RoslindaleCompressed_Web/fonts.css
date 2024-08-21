@@ -1,0 +1,16 @@
+@font-face {
+    src: url('fonts/RoslindaleDisplayCompressed-Bold.woff2') format("woff2"),
+         url('fonts/RoslindaleDisplayCompressed-Bold.woff') format("woff");
+    font-family: 'Roslindale Compressed Web';
+    font-style: normal;
+    font-weight: normal;
+    }
+    
+@font-face {
+    src: url('fonts/RoslindaleDisplayExtraCondensed-Bold.woff2') format("woff2"),
+         url('fonts/RoslindaleDisplayExtraCondensed-Bold.woff') format("woff");
+    font-family: 'Roslindale ExtraCond Web';
+    font-style: normal;
+    font-weight: normal;
+    }
+    
