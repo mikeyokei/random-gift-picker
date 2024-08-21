@@ -3,52 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Gift Picker with Redraw</title>
+    <title>Random Gift Picker with Redraw and Remove</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            line-height: 1.6;
             margin: 0;
             padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f0f0f0;
+            background-color: #f4f4f4;
         }
         .container {
+            max-width: 800px;
+            margin: 0 auto;
             background-color: white;
-            border-radius: 10px;
             padding: 20px;
+            border-radius: 5px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 600px;
-            width: 100%;
         }
         h1, h2 {
             color: #333;
         }
-        #giftDisplay, #redrawGiftDisplay {
-            font-size: 18px;
-            margin: 20px 0;
-            padding: 10px;
-            background-color: #f9f9f9;
-            border-radius: 5px;
-            min-height: 50px;
-        }
         input, button {
-            font-size: 16px;
-            padding: 10px;
             margin: 10px 0;
-            width: calc(100% - 22px);
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
         }
         button {
             background-color: #4CAF50;
-            border: none;
             color: white;
+            border: none;
             cursor: pointer;
-            transition: background-color 0.3s;
         }
         button:hover {
             background-color: #45a049;
@@ -57,45 +42,25 @@
             background-color: #cccccc;
             cursor: not-allowed;
         }
-        #giftStatus, #redrawGiftStatus {
+        #giftDisplay, #redrawGiftDisplay {
             margin-top: 20px;
-            text-align: left;
+            font-weight: bold;
         }
-        #giftStatus ul, #redrawGiftStatus ul {
-            list-style-type: none;
-            padding: 0;
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
         }
-        #giftStatus li, #redrawGiftStatus li {
-            margin-bottom: 5px;
-            padding: 5px;
-            background-color: #f0f0f0;
+        .remove-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin-left: 10px;
+            cursor: pointer;
             border-radius: 3px;
         }
-        #feedback {
-            color: #ff0000;
-            margin-top: 10px;
-        }
-        .section {
-            border-top: 1px solid #ddd;
-            margin-top: 20px;
-            padding-top: 20px;
-        }
-        #redrawButton {
-            background-color: #2196F3;
-        }
-        #redrawButton:hover {
-            background-color: #1976D2;
-        }
-        #adminSection {
-            display: none;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-        }
-        #resetButton, #resetRedrawButton {
-            background-color: #f44336;
-        }
-        #resetButton:hover, #resetRedrawButton:hover {
+        .remove-btn:hover {
             background-color: #d32f2f;
         }
     </style>
@@ -103,34 +68,28 @@
 <body>
     <div class="container">
         <h1>Random Gift Picker</h1>
-        <input type="text" id="nameInput" placeholder="Enter your name" required aria-label="Your name">
-        <div id="giftDisplay" aria-live="polite">Enter your name and click the button to pick a random gift!</div>
-        <button id="pickButton" aria-label="Pick a Gift">Pick a Gift</button>
-        <div id="feedback" aria-live="assertive"></div>
-        <div id="giftStatus">
-            <h2>Gift Status</h2>
-            <ul id="giftStatusList" aria-label="List of picked gifts"></ul>
-        </div>
-
-        <div class="section">
-            <h2>Redraw Section</h2>
-            <input type="text" id="redrawNameInput" placeholder="Enter your name for redraw" required aria-label="Your name for redraw">
-            <div id="redrawGiftDisplay" aria-live="polite">Enter your name and click the button to redraw a gift!</div>
-            <button id="redrawButton" aria-label="Redraw a Gift">Redraw a Gift</button>
-            <div id="redrawGiftStatus">
-                <h3>Redrawn Gift Status</h3>
-                <ul id="redrawGiftStatusList" aria-label="List of redrawn gifts"></ul>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>Admin Section</h2>
-            <input type="password" id="adminPassword" placeholder="Enter admin password" aria-label="Admin password">
-            <button id="adminLogin">Login as Admin</button>
-            <div id="adminSection">
-                <button id="resetButton" aria-label="Reset All Gift Status">Reset All Gift Status</button>
-                <button id="resetRedrawButton" aria-label="Reset Redraw Gift Status">Reset Redraw Gift Status</button>
-            </div>
+        <input type="text" id="nameInput" placeholder="Enter your name">
+        <button id="pickButton">Pick a Gift</button>
+        <div id="giftDisplay"></div>
+        
+        <h2>Gift Status</h2>
+        <ul id="giftStatusList"></ul>
+        
+        <h2>Redraw Gift</h2>
+        <input type="text" id="redrawNameInput" placeholder="Enter your name">
+        <button id="redrawButton">Redraw Gift</button>
+        <div id="redrawGiftDisplay"></div>
+        
+        <h2>Redrawn Gift Status</h2>
+        <ul id="redrawGiftStatusList"></ul>
+        
+        <h2>Admin Section</h2>
+        <input type="password" id="adminPassword" placeholder="Enter admin password">
+        <button onclick="checkAdminPassword()">Login as Admin</button>
+        
+        <div id="adminSection" style="display: none;">
+            <h3>Admin Controls</h3>
+            <button id="resetButton">Reset All Gifts</button>
         </div>
     </div>
 
@@ -157,219 +116,222 @@
         const database = getDatabase(app);
         const auth = getAuth(app);
 
-        signInAnonymously(auth).catch((error) => {
-            console.error("Error signing in anonymously:", error);
-            showFeedback("An error occurred. Please try again later.");
-        });
-
         const gifts = [
-            "Túi Labubu Blind Box",
-            "Kẹp giấy Labubu Blind Box",
-            "Đồ kẹp polaroid Candy Bear",
-            "Miffy 10cm",
-            "Miffy Móc chìa khóa",
-            "CryBaby Flower Blind Box",
-            "Mền tiên cá ariel disney",
-            "Poster Brat (fan-made)",
-            "Sổ VanGogh Museum",
-            "Sổ claude monet",
-            "2 tách trà gốm",
-            "Labubu Louvre nam châm Blind Box",
-            "Molly nam châm blind box"
+            "Luxury Watch", "Designer Handbag", "Wireless Earbuds", "Gourmet Chocolate Set",
+            "Spa Day Package", "High-End Coffee Maker", "Premium Wine Selection", "Smart Home Device",
+            "Fitness Tracker", "Artisanal Cheese Basket", "Leather Wallet", "Bluetooth Speaker",
+            "Scented Candle Set", "Cocktail Making Kit", "Portable Charger", "Yoga Mat",
+            "Cookbook Collection", "Sunglasses", "Travel Luggage", "Skincare Set"
         ];
 
-        const redrawGifts = [
-            "Kẹp giấy Labubu Blind Box",
-            "Miffy Móc chìa khóa",
-            "Mền tiên cá ariel disney",
-            "Poster Brat (fan-made)",
-            "Sổ VanGogh Museum",
-            "Sổ claude monet",
-            "2 tách trà gốm"
-        ];
+        function showFeedback(message, color = 'red') {
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.textContent = message;
+            feedbackDiv.className = 'feedback';
+            feedbackDiv.style.backgroundColor = color === 'green' ? '#d4edda' : '#f8d7da';
+            feedbackDiv.style.color = color === 'green' ? '#155724' : '#721c24';
+            document.querySelector('.container').appendChild(feedbackDiv);
+            setTimeout(() => feedbackDiv.remove(), 3000);
+        }
 
-        async function pickRandomGift() {
+        async function pickGift() {
             const name = document.getElementById('nameInput').value.trim();
             if (!name) {
-                showFeedback('Please enter your name first!');
+                showFeedback('Please enter your name.');
                 return;
             }
 
-            if (localStorage.getItem('giftPicked')) {
-                showFeedback('You have already picked a gift!');
+            if (localStorage.getItem('giftPicked') === 'true') {
+                showFeedback('You have already picked a gift.');
                 return;
             }
 
             try {
-                const pickedGiftsRef = ref(database, 'pickedGifts');
-                const snapshot = await get(pickedGiftsRef);
-                const pickedGifts = snapshot.val() || {};
-
+                const pickedGiftsSnapshot = await get(ref(database, 'pickedGifts'));
+                const pickedGifts = pickedGiftsSnapshot.val() || {};
                 const availableGifts = gifts.filter(gift => !Object.values(pickedGifts).some(picked => picked.gift === gift));
 
                 if (availableGifts.length === 0) {
-                    showFeedback('Sorry, all gifts have been picked!');
+                    showFeedback('All gifts have been picked. Please try again later.');
                     return;
                 }
 
-                const randomIndex = Math.floor(Math.random() * availableGifts.length);
-                const selectedGift = availableGifts[randomIndex];
-                const result = `${name} receives ${selectedGift}`;
+                const randomGift = availableGifts[Math.floor(Math.random() * availableGifts.length)];
+                const newGiftRef = push(ref(database, 'pickedGifts'));
+                await set(newGiftRef, { name: name, gift: randomGift });
 
-                await push(pickedGiftsRef, { name: name, gift: selectedGift });
-
-                document.getElementById('giftDisplay').textContent = result;
-                localStorage.setItem('giftPicked', 'true');
-                localStorage.setItem('selectedGift', result);
+                document.getElementById('giftDisplay').textContent = `Congratulations ${name}! You picked: ${randomGift}`;
                 document.getElementById('pickButton').disabled = true;
                 document.getElementById('nameInput').disabled = true;
+                localStorage.setItem('giftPicked', 'true');
+                localStorage.setItem('selectedGift', randomGift);
                 showFeedback('Gift picked successfully!', 'green');
             } catch (error) {
                 console.error("Error picking gift:", error);
-                showFeedback('An error occurred. Please try again.');
+                showFeedback('An error occurred while picking the gift.');
             }
         }
 
-       async function redrawGift() {
+        async function redrawGift() {
             const name = document.getElementById('redrawNameInput').value.trim();
             if (!name) {
-                showFeedback('Please enter your name for redraw!');
+                showFeedback('Please enter your name.');
+                return;
+            }
+
+            if (localStorage.getItem('giftPicked') !== 'true') {
+                showFeedback('You need to pick a gift first before redrawing.');
                 return;
             }
 
             try {
-                const redrawGiftsRef = ref(database, 'redrawGifts');
-                
-                // First, try to read from the database
-                let snapshot;
-                try {
-                    snapshot = await get(redrawGiftsRef);
-                } catch (readError) {
-                    console.error("Error reading from database:", readError);
-                    showFeedback('Unable to access the gift database. Please contact the administrator.');
+                const pickedGiftsSnapshot = await get(ref(database, 'pickedGifts'));
+                const pickedGifts = pickedGiftsSnapshot.val() || {};
+                const userGift = Object.values(pickedGifts).find(picked => picked.name === name);
+
+                if (!userGift) {
+                    showFeedback('You have not picked a gift yet.');
                     return;
                 }
 
-                const pickedRedrawGifts = snapshot.val() || {};
+                const availableGifts = gifts.filter(gift => 
+                    gift !== userGift.gift && 
+                    !Object.values(pickedGifts).some(picked => picked.gift === gift)
+                );
 
-                const availableRedrawGifts = redrawGifts.filter(gift => !Object.values(pickedRedrawGifts).some(picked => picked.gift === gift));
-
-                if (availableRedrawGifts.length === 0) {
-                    showFeedback('Sorry, all redraw gifts have been picked!');
+                if (availableGifts.length === 0) {
+                    showFeedback('No more gifts available for redraw.');
                     return;
                 }
 
-                const randomIndex = Math.floor(Math.random() * availableRedrawGifts.length);
-                const selectedGift = availableRedrawGifts[randomIndex];
-                const result = `${name} redraws ${selectedGift}`;
+                const newGift = availableGifts[Math.floor(Math.random() * availableGifts.length)];
+                const newGiftRef = push(ref(database, 'redrawGifts'));
+                await set(newGiftRef, { name: name, gift: newGift });
 
-                // Try to write to the database
-                try {
-                    await push(redrawGiftsRef, { name: name, gift: selectedGift });
-                } catch (writeError) {
-                    console.error("Error writing to database:", writeError);
-                    showFeedback('Unable to save your gift selection. Please contact the administrator.');
-                    return;
-                }
-
-                document.getElementById('redrawGiftDisplay').textContent = result;
+                document.getElementById('redrawGiftDisplay').textContent = `${name}, your new gift is: ${newGift}`;
                 document.getElementById('redrawButton').disabled = true;
                 document.getElementById('redrawNameInput').disabled = true;
                 showFeedback('Gift redrawn successfully!', 'green');
             } catch (error) {
                 console.error("Error redrawing gift:", error);
-                showFeedback('An unexpected error occurred. Please try again or contact the administrator.');
+                showFeedback('An error occurred while redrawing the gift.');
             }
         }
 
-        function updateGiftStatus(pickedGifts, elementId) {
+        function updateGiftStatus(pickedGifts, elementId, isAdmin) {
             const giftStatusList = document.getElementById(elementId);
             giftStatusList.innerHTML = '';
             
             for (const [key, value] of Object.entries(pickedGifts)) {
                 const listItem = document.createElement('li');
                 listItem.textContent = `${value.name} received ${value.gift}`;
+                
+                if (isAdmin) {
+                    const removeButton = document.createElement('button');
+                    removeButton.textContent = 'Remove';
+                    removeButton.className = 'remove-btn';
+                    removeButton.onclick = () => removeGiftStatus(key, elementId === 'giftStatusList' ? 'pickedGifts' : 'redrawGifts');
+                    listItem.appendChild(removeButton);
+                }
+                
                 giftStatusList.appendChild(listItem);
             }
         }
 
-        function showFeedback(message, color = 'red') {
-            const feedbackElement = document.getElementById('feedback');
-            feedbackElement.textContent = message;
-            feedbackElement.style.color = color;
-            setTimeout(() => {
-                feedbackElement.textContent = '';
-            }, 5000);
+        async function removeGiftStatus(key, giftType) {
+            try {
+                const giftRef = ref(database, `${giftType}/${key}`);
+                await set(giftRef, null);
+                showFeedback(`Gift status removed successfully!`, 'green');
+                
+                if (giftType === 'pickedGifts') {
+                    localStorage.removeItem('giftPicked');
+                    localStorage.removeItem('selectedGift');
+                    document.getElementById('pickButton').disabled = false;
+                    document.getElementById('nameInput').disabled = false;
+                    document.getElementById('giftDisplay').textContent = 'Enter your name and click the button to pick a random gift!';
+                } else if (giftType === 'redrawGifts') {
+                    document.getElementById('redrawButton').disabled = false;
+                    document.getElementById('redrawNameInput').disabled = false;
+                    document.getElementById('redrawGiftDisplay').textContent = 'Enter your name and click the button to redraw a gift!';
+                }
+            } catch (error) {
+                console.error("Error removing gift status:", error);
+                showFeedback('An error occurred while removing gift status.');
+            }
         }
 
-        async function resetAllGiftStatus() {
+        async function resetAllGifts() {
             try {
                 await set(ref(database, 'pickedGifts'), null);
                 await set(ref(database, 'redrawGifts'), null);
-                showFeedback('All gift status reset successfully!', 'green');
-                document.getElementById('giftDisplay').textContent = '';
-                document.getElementById('redrawGiftDisplay').textContent = '';
+                localStorage.removeItem('giftPicked');
+                localStorage.removeItem('selectedGift');
                 document.getElementById('pickButton').disabled = false;
                 document.getElementById('nameInput').disabled = false;
                 document.getElementById('redrawButton').disabled = false;
                 document.getElementById('redrawNameInput').disabled = false;
-                localStorage.removeItem('giftPicked');
-                localStorage.removeItem('selectedGift');
+                document.getElementById('giftDisplay').textContent = 'Enter your name and click the button to pick a random gift!';
+                document.getElementById('redrawGiftDisplay').textContent = 'Enter your name and click the button to redraw a gift!';
+                showFeedback('All gifts have been reset!', 'green');
             } catch (error) {
-                console.error("Error resetting gift status:", error);
-                showFeedback('An error occurred while resetting gift status.');
-            }
-        }
-
-        async function resetRedrawGiftStatus() {
-            try {
-                await set(ref(database, 'redrawGifts'), null);
-                showFeedback('Redraw gift status reset successfully!', 'green');
-                document.getElementById('redrawGiftDisplay').textContent = '';
-                document.getElementById('redrawButton').disabled = false;
-                document.getElementById('redrawNameInput').disabled = false;
-            } catch (error) {
-                console.error("Error resetting redraw gift status:", error);
-                showFeedback('An error occurred while resetting redraw gift status.');
+                console.error("Error resetting gifts:", error);
+                showFeedback('An error occurred while resetting gifts.');
             }
         }
 
         function checkAdminPassword() {
             const password = document.getElementById('adminPassword').value;
-            if (password === 'your_admin_password_here') {
+            if (password === 'admin123') {
                 document.getElementById('adminSection').style.display = 'block';
                 showFeedback('Admin login successful', 'green');
+                
+                const pickedGiftsRef = ref(database, 'pickedGifts');
+                const redrawGiftsRef = ref(database, 'redrawGifts');
+                
+                onValue(pickedGiftsRef, (snapshot) => {
+                    const pickedGifts = snapshot.val() || {};
+                    updateGiftStatus(pickedGifts, 'giftStatusList', true);
+                });
+                
+                onValue(redrawGiftsRef, (snapshot) => {
+                    const pickedRedrawGifts = snapshot.val() || {};
+                    updateGiftStatus(pickedRedrawGifts, 'redrawGiftStatusList', true);
+                });
             } else {
                 showFeedback('Incorrect admin password');
             }
         }
 
         window.onload = function() {
-            if (localStorage.getItem('giftPicked')) {
-                const savedResult = localStorage.getItem('selectedGift');
-                document.getElementById('giftDisplay').textContent = savedResult;
+            signInAnonymously(auth).catch((error) => {
+                console.error("Error signing in anonymously:", error);
+            });
+
+            if (localStorage.getItem('giftPicked') === 'true') {
                 document.getElementById('pickButton').disabled = true;
                 document.getElementById('nameInput').disabled = true;
+                const selectedGift = localStorage.getItem('selectedGift');
+                document.getElementById('giftDisplay').textContent = `You have already picked: ${selectedGift}`;
             }
 
             const pickedGiftsRef = ref(database, 'pickedGifts');
             onValue(pickedGiftsRef, (snapshot) => {
                 const pickedGifts = snapshot.val() || {};
-                updateGiftStatus(pickedGifts, 'giftStatusList');
+                updateGiftStatus(pickedGifts, 'giftStatusList', false);
             });
 
             const redrawGiftsRef = ref(database, 'redrawGifts');
             onValue(redrawGiftsRef, (snapshot) => {
                 const pickedRedrawGifts = snapshot.val() || {};
-                updateGiftStatus(pickedRedrawGifts, 'redrawGiftStatusList');
+                updateGiftStatus(pickedRedrawGifts, 'redrawGiftStatusList', false);
             });
         }
 
-        document.getElementById('pickButton').addEventListener('click', pickRandomGift);
+        document.getElementById('pickButton').addEventListener('click', pickGift);
         document.getElementById('redrawButton').addEventListener('click', redrawGift);
-        document.getElementById('adminLogin').addEventListener('click', checkAdminPassword);
-        document.getElementById('resetButton').addEventListener('click', resetAllGiftStatus);
-        document.getElementById('resetRedrawButton').addEventListener('click', resetRedrawGiftStatus);
+        document.getElementById('resetButton').addEventListener('click', resetAllGifts);
+        window.checkAdminPassword = checkAdminPassword;
     </script>
 </body>
 </html>
