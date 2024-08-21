@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Gift Picker with Redraw and Remove</title>
+    <title>Random Gift Picker with Separate Redraw</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -161,11 +161,6 @@
                 return;
             }
 
-            if (localStorage.getItem('giftPicked') === 'true') {
-                showFeedback('You have already picked a gift.');
-                return;
-            }
-
             try {
                 const pickedGiftsSnapshot = await get(ref(database, 'pickedGifts'));
                 const pickedGifts = pickedGiftsSnapshot.val() || {};
@@ -174,6 +169,9 @@
                 const existingGift = Object.values(pickedGifts).find(picked => picked.name === name);
                 if (existingGift) {
                     showFeedback(`${name}, you have already picked: ${existingGift.gift}`);
+                    document.getElementById('giftDisplay').textContent = `Your picked gift: ${existingGift.gift}`;
+                    document.getElementById('pickButton').disabled = true;
+                    document.getElementById('nameInput').disabled = true;
                     return;
                 }
 
@@ -191,8 +189,6 @@
                 document.getElementById('giftDisplay').textContent = `Congratulations ${name}! You picked: ${randomGift}`;
                 document.getElementById('pickButton').disabled = true;
                 document.getElementById('nameInput').disabled = true;
-                localStorage.setItem('giftPicked', 'true');
-                localStorage.setItem('selectedGift', randomGift);
                 showFeedback('Gift picked successfully!', 'green');
             } catch (error) {
                 console.error("Error picking gift:", error);
@@ -207,21 +203,7 @@
                 return;
             }
 
-            if (localStorage.getItem('giftPicked') !== 'true') {
-                showFeedback('You need to pick a gift first before redrawing.');
-                return;
-            }
-
             try {
-                const pickedGiftsSnapshot = await get(ref(database, 'pickedGifts'));
-                const pickedGifts = pickedGiftsSnapshot.val() || {};
-                const userGift = Object.values(pickedGifts).find(picked => picked.name === name);
-
-                if (!userGift) {
-                    showFeedback('You have not picked a gift yet.');
-                    return;
-                }
-
                 const redrawGiftsSnapshot = await get(ref(database, 'redrawGifts'));
                 const redrawedGifts = redrawGiftsSnapshot.val() || {};
 
@@ -229,12 +211,13 @@
                 const existingRedraw = Object.values(redrawedGifts).find(redrawn => redrawn.name === name);
                 if (existingRedraw) {
                     showFeedback(`${name}, you have already redrawn: ${existingRedraw.gift}`);
+                    document.getElementById('redrawGiftDisplay').textContent = `Your redrawn gift: ${existingRedraw.gift}`;
+                    document.getElementById('redrawButton').disabled = true;
+                    document.getElementById('redrawNameInput').disabled = true;
                     return;
                 }
 
                 const availableGifts = redrawGifts.filter(gift => 
-                    gift !== userGift.gift && 
-                    !Object.values(pickedGifts).some(picked => picked.gift === gift) &&
                     !Object.values(redrawedGifts).some(redrawn => redrawn.gift === gift)
                 );
 
@@ -284,8 +267,6 @@
                 showFeedback(`Gift status removed successfully!`, 'green');
                 
                 if (giftType === 'pickedGifts') {
-                    localStorage.removeItem('giftPicked');
-                    localStorage.removeItem('selectedGift');
                     document.getElementById('pickButton').disabled = false;
                     document.getElementById('nameInput').disabled = false;
                     document.getElementById('giftDisplay').textContent = '';
@@ -304,8 +285,6 @@
             try {
                 await remove(ref(database, 'pickedGifts'));
                 await remove(ref(database, 'redrawGifts'));
-                localStorage.removeItem('giftPicked');
-                localStorage.removeItem('selectedGift');
                 document.getElementById('pickButton').disabled = false;
                 document.getElementById('nameInput').disabled = false;
                 document.getElementById('redrawButton').disabled = false;
@@ -346,13 +325,6 @@
             signInAnonymously(auth).catch((error) => {
                 console.error("Error signing in anonymously:", error);
             });
-
-            if (localStorage.getItem('giftPicked') === 'true') {
-                document.getElementById('pickButton').disabled = true;
-                document.getElementById('nameInput').disabled = true;
-                const selectedGift = localStorage.getItem('selectedGift');
-                document.getElementById('giftDisplay').textContent = `You have already picked: ${selectedGift}`;
-            }
 
             const pickedGiftsRef = ref(database, 'pickedGifts');
             onValue(pickedGiftsRef, (snapshot) => {
