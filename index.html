@@ -110,44 +110,6 @@
         ::placeholder {
             font-family: 'NaN Serif B Micro Light', sans-serif;
         }
-        #giftStatusList, #redrawGiftStatusList {
-            font-size: 14px; /* Smaller font size for status lists */
-            line-height: 1.4;
-        }
-        #giftStatusList li, #redrawGiftStatusList li {
-            margin-bottom: 5px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Random Gift Picker</h1>
-        <input type="text" id="nameInput" placeholder="Enter your name">
-        <button id="pickButton">Pick a Gift</button>
-        <div id="giftDisplay"></div>
-        
-        <h2>Gift Status</h2>
-        <ul id="giftStatusList"></ul>
-        
-        <h2>Redraw Gift</h2>
-        <input type="text" id="redrawNameInput" placeholder="Enter your name">
-        <button id="redrawButton">Redraw Gift</button>
-        <div id="redrawGiftDisplay"></div>
-        
-        <h2>Redrawn Gift Status</h2>
-        <ul id="redrawGiftStatusList"></ul>
-        
-        <h2>Admin Section</h2>
-        <input type="password" id="adminPassword" placeholder="Enter admin password">
-        <button onclick="checkAdminPassword()">Login as Admin</button>
-        
-        <div id="adminSection" style="display: none;">
-            <h3>Admin Controls</h3>
-            <button id="resetButton">Reset All Gifts</button>
-        </div>
-    </div>
-
-    <script type="module">
     </style>
 </head>
 <body>
