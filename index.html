@@ -92,10 +92,10 @@
             padding-top: 20px;
             border-top: 1px solid #ddd;
         }
-        #resetButton {
+        #resetButton, #resetRedrawButton {
             background-color: #f44336;
         }
-        #resetButton:hover {
+        #resetButton:hover, #resetRedrawButton:hover {
             background-color: #d32f2f;
         }
     </style>
@@ -129,6 +129,7 @@
             <button id="adminLogin">Login as Admin</button>
             <div id="adminSection">
                 <button id="resetButton" aria-label="Reset All Gift Status">Reset All Gift Status</button>
+                <button id="resetRedrawButton" aria-label="Reset Redraw Gift Status">Reset Redraw Gift Status</button>
             </div>
         </div>
     </div>
@@ -305,29 +306,41 @@
             try {
                 await set(ref(database, 'pickedGifts'), null);
                 await set(ref(database, 'redrawGifts'), null);
-                localStorage.removeItem('giftPicked');
-                localStorage.removeItem('selectedGift');
-                document.getElementById('giftDisplay').textContent = 'Enter your name and click the button to pick a random gift!';
-                document.getElementById('redrawGiftDisplay').textContent = 'Enter your name and click the button to redraw a gift!';
+                showFeedback('All gift status reset successfully!', 'green');
+                document.getElementById('giftDisplay').textContent = '';
+                document.getElementById('redrawGiftDisplay').textContent = '';
                 document.getElementById('pickButton').disabled = false;
                 document.getElementById('nameInput').disabled = false;
                 document.getElementById('redrawButton').disabled = false;
                 document.getElementById('redrawNameInput').disabled = false;
-                showFeedback('All gift statuses have been reset!', 'green');
+                localStorage.removeItem('giftPicked');
+                localStorage.removeItem('selectedGift');
             } catch (error) {
                 console.error("Error resetting gift status:", error);
-                showFeedback('An error occurred while resetting. Please try again.');
+                showFeedback('An error occurred while resetting gift status.');
+            }
+        }
+
+        async function resetRedrawGiftStatus() {
+            try {
+                await set(ref(database, 'redrawGifts'), null);
+                showFeedback('Redraw gift status reset successfully!', 'green');
+                document.getElementById('redrawGiftDisplay').textContent = '';
+                document.getElementById('redrawButton').disabled = false;
+                document.getElementById('redrawNameInput').disabled = false;
+            } catch (error) {
+                console.error("Error resetting redraw gift status:", error);
+                showFeedback('An error occurred while resetting redraw gift status.');
             }
         }
 
         function checkAdminPassword() {
             const password = document.getElementById('adminPassword').value;
-            // Replace 'your_admin_password' with your actual admin password
-            if (password === 'm1k3yokei') {
+            if (password === 'your_admin_password_here') {
                 document.getElementById('adminSection').style.display = 'block';
-                showFeedback('Admin login successful!', 'green');
+                showFeedback('Admin login successful', 'green');
             } else {
-                showFeedback('Incorrect admin password!');
+                showFeedback('Incorrect admin password');
             }
         }
 
@@ -356,6 +369,7 @@
         document.getElementById('redrawButton').addEventListener('click', redrawGift);
         document.getElementById('adminLogin').addEventListener('click', checkAdminPassword);
         document.getElementById('resetButton').addEventListener('click', resetAllGiftStatus);
+        document.getElementById('resetRedrawButton').addEventListener('click', resetRedrawGiftStatus);
     </script>
 </body>
 </html>
