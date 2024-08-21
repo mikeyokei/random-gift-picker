@@ -230,7 +230,7 @@
             }
         }
 
-        async function redrawGift() {
+       async function redrawGift() {
             const name = document.getElementById('redrawNameInput').value.trim();
             if (!name) {
                 showFeedback('Please enter your name for redraw!');
@@ -239,7 +239,17 @@
 
             try {
                 const redrawGiftsRef = ref(database, 'redrawGifts');
-                const snapshot = await get(redrawGiftsRef);
+                
+                // First, try to read from the database
+                let snapshot;
+                try {
+                    snapshot = await get(redrawGiftsRef);
+                } catch (readError) {
+                    console.error("Error reading from database:", readError);
+                    showFeedback('Unable to access the gift database. Please contact the administrator.');
+                    return;
+                }
+
                 const pickedRedrawGifts = snapshot.val() || {};
 
                 const availableRedrawGifts = redrawGifts.filter(gift => !Object.values(pickedRedrawGifts).some(picked => picked.gift === gift));
@@ -253,7 +263,14 @@
                 const selectedGift = availableRedrawGifts[randomIndex];
                 const result = `${name} redraws ${selectedGift}`;
 
-                await push(redrawGiftsRef, { name: name, gift: selectedGift });
+                // Try to write to the database
+                try {
+                    await push(redrawGiftsRef, { name: name, gift: selectedGift });
+                } catch (writeError) {
+                    console.error("Error writing to database:", writeError);
+                    showFeedback('Unable to save your gift selection. Please contact the administrator.');
+                    return;
+                }
 
                 document.getElementById('redrawGiftDisplay').textContent = result;
                 document.getElementById('redrawButton').disabled = true;
@@ -261,7 +278,7 @@
                 showFeedback('Gift redrawn successfully!', 'green');
             } catch (error) {
                 console.error("Error redrawing gift:", error);
-                showFeedback('An error occurred. Please try again.');
+                showFeedback('An unexpected error occurred. Please try again or contact the administrator.');
             }
         }
 
