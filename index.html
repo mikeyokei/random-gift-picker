@@ -354,7 +354,7 @@
             }
         }
 
-        async function redrawGift() {
+async function redrawGift() {
             if (document.getElementById('passwordOverlay').style.display !== 'none') {
                 alert('Please enter the correct password first.');
                 return;
@@ -370,6 +370,72 @@
                 showFeedback('You need to pick a gift first before redrawing.');
                 return;
             }
+
+            showLoading();
+            try {
+                const pickedGiftsSnapshot = await get(ref(database, 'pickedGifts'));
+                const pickedGifts = pickedGiftsSnapshot.val() || {};
+                const userGiftEntry = Object.entries(pickedGifts).find(([key, picked]) => picked.name === name);
+
+                if (!userGiftEntry) {
+                    showFeedback('You have not picked a gift yet.');
+                    hideLoading();
+                    return;
+                }
+
+                const [userGiftKey, userGift] = userGiftEntry;
+
+                const redrawGiftsSnapshot = await get(ref(database, 'redrawGifts'));
+                const redrawedGifts = redrawGiftsSnapshot.val() || {};
+
+                // Check if the user has already redrawn a gift
+                const existingRedraw = Object.values(redrawedGifts).find(redrawn => redrawn.name === name);
+                if (existingRedraw) {
+                    showFeedback(`${name}, you have already redrawn: ${existingRedraw.gift}`);
+                    hideLoading();
+                    return;
+                }
+
+                const availableGifts = redrawGifts.filter(gift => 
+                    gift !== userGift.gift && 
+                    !Object.values(pickedGifts).some(picked => picked.gift === gift) &&
+                    !Object.values(redrawedGifts).some(redrawn => redrawn.gift === gift)
+                );
+
+                if (availableGifts.length === 0) {
+                    showFeedback('No more gifts available for redraw.');
+                    hideLoading();
+                    return;
+                }
+
+                const newGift = availableGifts[Math.floor(Math.random() * availableGifts.length)];
+                const newGiftRef = push(ref(database, 'redrawGifts'));
+                await set(newGiftRef, { name: name, gift: newGift });
+
+                // Remove the user's picked gift status
+                await remove(ref(database, `pickedGifts/${userGiftKey}`));
+
+                document.getElementById('redrawGiftDisplay').textContent = `${name}, your new gift is: ${newGift}`;
+                document.getElementById('redrawButton').disabled = true;
+                document.getElementById('redrawNameInput').disabled = true;
+                showFeedback('Gift redrawn successfully!', 'green');
+
+                // Update local storage
+                localStorage.removeItem('giftPicked');
+                localStorage.removeItem('selectedGift');
+
+                // Reset the original gift picking section
+                document.getElementById('pickButton').disabled = false;
+                document.getElementById('nameInput').disabled = false;
+                document.getElementById('giftDisplay').textContent = '';
+
+            } catch (error) {
+                console.error("Error redrawing gift:", error);
+                showFeedback('An error occurred while redrawing the gift.');
+            } finally {
+                hideLoading();
+            }
+        }
 
             showLoading();
             try {
